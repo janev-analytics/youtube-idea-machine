@@ -98,7 +98,8 @@ Score on video 2 is after fixing one mis-click in my own labels (a plain complim
 |---|---|---|
 | Same book promoted by 4 accounts (2 with word-for-word identical text); AI caught only 1 | 3 | **AI error** |
 | Commenter openly promotes his own investing channel | 1 | **AI error** (its own reason says "promotes own videos", yet it chose `opinion`) |
-| "You should write a book" / asking for similar creators / long story ending in a knowledge gap | 3 | **Gap in the categories**: asks the creator for something other than a video |
+| "You should write a book on investing 😊" | 1 | **AI error**: a compliment taken literally as a request (see Finding 2) |
+| Asking for similar creators / long story ending in a knowledge gap | 2 | **Gap in the categories**: asks the creator for something other than a video |
 
 **Takeaway:** the drop is almost entirely spam. Request and question detection held up: the top request (*ethical investing*, 54 likes) and all 5 real questions were caught. Full comparison: [`data/video2/labels_vs_ai.csv`](data/video2/labels_vs_ai.csv).
 
@@ -113,8 +114,12 @@ Two unrelated accounts posted personal-sounding stories that both promote the sa
 
 **Confirmed on the second video:** a different book, pushed by 4 accounts, two of them posting identical text. Across both videos the AI caught **1 of 6** coordinated promo comments. That is a pattern, not a one-off, and the fix is a rule (flag text or titles repeated across 3+ authors), not a better prompt.
 
-### 2. Rhetorical questions get labeled as questions
-2 of the 17 `request`/`question` labels were sarcasm or insinuation phrased as a question. The question mark wins.
+### 2. The AI reads the form, not the intent
+It takes comments literally:
+- **Video 1:** 2 of the 17 `request`/`question` labels were sarcasm or insinuation phrased as a question. The question mark wins.
+- **Video 2:** *"You should write a book on investing 😊"* is a compliment ("you explain this so well"), but the AI labeled it `request` because it is phrased as a suggestion.
+
+A human reads tone; the model reads grammar. Without a rule for this, rhetorical questions and compliments phrased as suggestions get counted as real demand.
 
 ### 3. Only ~1 in 5 comments is a direct signal
 
@@ -164,7 +169,7 @@ One viewer asked *where* the creator's networking video was. It already exists, 
 ## Future improvements
 
 1. Dataset-level spam check (same product/book named by multiple accounts)
-2. Rule for rhetorical questions and timestamp-only comments
+2. Rule for rhetorical questions, compliments phrased as suggestions, and timestamp-only comments
 3. JSON Schema output so the model can't invent a label
 4. Use the creator's own replies as a signal (e.g. *"I'm not qualified to make that video"*)
 5. Let n8n trigger the scraper itself (fully automated runs) instead of fetching a dataset scraped manually
