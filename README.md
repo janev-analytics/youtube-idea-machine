@@ -4,6 +4,8 @@
 
 Creators get hundreds of comments, but the useful ones (requests, questions, knowledge gaps) are buried under praise, opinions and spam. This project pulls the comments from one video, cleans them, has an LLM label each one, writes the results to Google Sheets, and then **evaluates the AI against my own hand labels**.
 
+> Built with Claude as a coding assistant. The labeling rules, hand labels, evaluation decisions and findings are my own.
+
 > Case study: *"How to Teach Yourself Business & Entrepreneurship"* by Analyzing Finance with Nick (176 comments incl. replies).
 
 ---
