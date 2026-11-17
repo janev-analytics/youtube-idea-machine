@@ -14,7 +14,7 @@ Creators get hundreds of comments, but the useful ones (requests, questions, kno
 
 | Step | Tool | Rows |
 |---|---|---|
-| 1. Pull comments | Apify (`streamers/youtube-comments-scraper`) via n8n HTTP Request | 142 |
+| 1. Pull comments | Apify (`streamers/youtube-comments-scraper`), run once in the Apify console; n8n fetches the resulting dataset via HTTP Request | 142 |
 | 2. Clean | n8n Filter (rules, no AI) | 90 |
 | 3. Classify | OpenAI `gpt-4.1-mini-2025-04-14`, temperature 0, JSON output | 90 |
 | 4. Reshape | n8n Edit Fields (re-attach `cid`, author, comment to the AI output) | 90 |
@@ -32,10 +32,10 @@ I predicted 141 rows would survive the first filter and got 121, which is how I 
 
 ### Design choices
 
-- **Rules before AI.** Anything a simple condition can do (removing the creator, replies, empty text) is done with a filter: cheaper, faster and 100% accurate.
-- **Idempotent writes.** *Append or Update* keyed on the comment ID means re-running the workflow updates rows instead of duplicating them.
-- **Pinned test data.** During development the scraper output was pinned in n8n, so every test reused the same data at no extra scraping cost.
-- **Pinned model version.** A dated model snapshot, not an alias, so results don't silently change.
+- **Rules before AI.** Anything a simple condition can handle (removing the creator's comments, reply threads, empty text) is done with a plain filter, not the AI: it's free, instant and never wrong.
+- **Safe to re-run.** The Sheets step uses "Append or Update" matched on the comment ID: existing rows are updated, new ones are added. Running the workflow once or ten times gives the same 90 rows, with no duplicates (this property is called idempotency).
+- **Frozen test data.** I scraped once and pinned the output in n8n. Every later test reused the same 142 comments instead of scraping again, so each change (prompt, filter) was tested on identical input, with no extra scraping cost. Only the AI calls cost money during testing (a few cents).
+- **Fixed model version.** I used a dated model (`gpt-4.1-mini-2025-04-14`) instead of the general name, which the provider can quietly point to a newer model, so results can't change unless I change something.
 
 ---
 
@@ -139,8 +139,9 @@ One viewer asked *where* the creator's networking video was. It already exists, 
 2. Rule for rhetorical questions and timestamp-only comments
 3. JSON Schema output so the model can't invent a label
 4. Use the creator's own replies as a signal (e.g. *"I'm not qualified to make that video"*)
-5. Replace Apify with the official YouTube Data API (free daily quota)
-6. Scheduled runs across several videos/channels to compare themes
+5. Let n8n trigger the scraper itself (fully automated runs) instead of fetching a dataset scraped manually
+6. Replace Apify with the official YouTube Data API (free daily quota)
+7. Scheduled runs across several videos/channels to compare themes
 
 ---
 
