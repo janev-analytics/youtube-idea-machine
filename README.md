@@ -148,7 +148,7 @@ One viewer asked *where* the creator's networking video was. It already exists, 
 
 ```
 ├── README.md
-├── workflow.json      # n8n workflow export (no credentials included)
+├── workflow.json      # n8n workflow export (credentials, pinned data and IDs removed)
 ├── prompt.md          # system prompt used for classification
 ├── rules.md           # labeling rules
 ├── data/
@@ -163,5 +163,5 @@ One viewer asked *where* the creator's networking video was. It already exists, 
 
 1. Import `workflow.json` into n8n.
 2. Add your own credentials: Apify API token (Bearer), OpenAI API key, Google service account with the target sheet shared to it.
-3. Point the Apify node at your video's dataset or actor run, and the Sheets node at your spreadsheet.
+3. Replace `YOUR_APIFY_DATASET_ID` in the Apify node and `YOUR_GOOGLE_SHEET_ID` in the Sheets node.
 4. Test with the Limit node at 5, then deactivate it and run the full set.

@@ -1,0 +1,404 @@
+{
+  "name": "YouTube Idea Machine",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -384,
+        -80
+      ],
+      "id": "3ca802dd-0284-4d0b-b67c-4ae60d089aac",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://api.apify.com/v2/datasets/YOUR_APIFY_DATASET_ID/items?format=json&clean=true",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -288,
+        80
+      ],
+      "id": "cb330b44-c76f-4faf-a082-fac8d7faa55b",
+      "name": "Get comments (Apify)",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "eQ3rLAxCa0hCwa7m",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 4
+          },
+          "conditions": [
+            {
+              "id": "3fcd134f-9731-4c28-a070-780a6c44a121",
+              "leftValue": "={{ $json.authorIsChannelOwner }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "17bbbe9b-745b-44a6-8f0e-f14a684aacf2",
+              "leftValue": "={{ $json.comment }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "4aa5c45d-d94a-4fc9-9d7f-80d9b322bdc7",
+              "leftValue": "={{ $json.type }}",
+              "rightValue": "=comment",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.4,
+      "position": [
+        -112,
+        -48
+      ],
+      "id": "e401df01-5d7e-415c-b133-f6a83866e99e",
+      "name": "Clean comments"
+    },
+    {
+      "parameters": {
+        "maxItems": 5
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -32,
+        128
+      ],
+      "id": "5c857c60-1bf5-42b4-97a8-05270de1997d",
+      "name": "Limit",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini-2025-04-14",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI-2025-04-14"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You classify YouTube comments posted under the video \"How to Teach Yourself Business & Entrepreneurship\" by a business/finance YouTuber named Nick.\n\nAssign exactly ONE label:\n- request: asks the creator for a video or topic, OR states a specific knowledge gap the creator could cover (e.g. \"I'm clueless about taxes and legal setup\"). A question asking for a video (\"can you do a video on X?\") is a request.\n- question: asks a question that a video could answer, without asking for a video.\n- praise: thanks, compliments or support aimed at the video or the creator, with no substantive content. Includes emoji-only positive comments and \"commenting for the algorithm\".\n- opinion: shares an opinion, experience, story, advice or criticism. This includes negative or hostile criticism of the creator, sarcasm, and short takes on a book, person or idea mentioned in the video. If praise is combined with substantive opinion or critique, choose opinion.\n- spam: promotes a book, product or service (often through a made-up personal story), offers services or collaboration to the creator, or is bot-like/unrelated. Negative criticism alone is NOT spam.\n\ntopic: for request, question and opinion, give the subject in 2-5 words (e.g. \"sales and marketing\", \"real estate investing\"). For praise and spam, topic is null.\n\nReturn ONLY valid JSON, no other text:\n{\"label\": \"request|question|praise|opinion|spam\", \"topic\": \"string or null\", \"reason\": \"max 15 words\"}"
+            },
+            {
+              "role": "=user",
+              "content": "=Comment: {{ $json.comment }}\n"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "json_object"
+            }
+          },
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        112,
+        -80
+      ],
+      "id": "340a8a34-4b12-41fd-84f6-d1f33c55ce57",
+      "name": "Classify comment (AI)",
+      "credentials": {
+        "openAiApi": {
+          "id": "RkT5IYktmkI1VVSw",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "29f5020d-128b-422a-837e-81fb90278551",
+              "name": "cid",
+              "value": "={{ $('Clean comments').item.json.cid }}",
+              "type": "string"
+            },
+            {
+              "id": "2315f4bb-01c6-4260-87f3-0cd36d722194",
+              "name": "author",
+              "value": "={{ $('Clean comments').item.json.author }}",
+              "type": "string"
+            },
+            {
+              "id": "923c2c8a-8291-4217-b7c5-7270fb76c0fa",
+              "name": "comment",
+              "value": "={{ $('Clean comments').item.json.comment }}",
+              "type": "string"
+            },
+            {
+              "id": "aa6f72c1-9cd5-4b4b-8895-d92efcdabe83",
+              "name": "voteCount",
+              "value": "={{ $('Clean comments').item.json.voteCount }}",
+              "type": "number"
+            },
+            {
+              "id": "42d49e33-5107-494a-8467-a67c4fd9f389",
+              "name": "ai_label",
+              "value": "={{ $json.output[0].content[0].text.label }}",
+              "type": "string"
+            },
+            {
+              "id": "d62cd906-9e84-403d-97c1-e7db5bf167e6",
+              "name": "ai_topic",
+              "value": "={{ $json.output[0].content[0].text.topic }}",
+              "type": "string"
+            },
+            {
+              "id": "2b43b7f0-a06e-4451-ade6-76eb0d9165f6",
+              "name": "ai_reason",
+              "value": "={{ $json.output[0].content[0].text.reason }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        176,
+        160
+      ],
+      "id": "c4344622-3286-47e5-9cd1-48a12a8f04df",
+      "name": "Format results"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "YouTube Idea Machine – Labels"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1706659473,
+          "mode": "list",
+          "cachedResultName": "AI Results"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [
+            "cid"
+          ],
+          "schema": [
+            {
+              "id": "cid",
+              "displayName": "cid",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "author",
+              "displayName": "author",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "comment",
+              "displayName": "comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "voteCount",
+              "displayName": "voteCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ai_label",
+              "displayName": "ai_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ai_topic",
+              "displayName": "ai_topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ai_reason",
+              "displayName": "ai_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        400,
+        160
+      ],
+      "id": "7c458719-51d4-44f1-9d34-5bc43c633cc1",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleApi": {
+          "id": "IUkCNYIrv0Il9H1F",
+          "name": "Google Service Account account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get comments (Apify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get comments (Apify)": {
+      "main": [
+        [
+          {
+            "node": "Clean comments",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean comments": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Classify comment (AI)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify comment (AI)": {
+      "main": [
+        [
+          {
+            "node": "Format results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format results": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "57633888-fb3b-4f49-837a-35637742817f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "94cb9745f2aefaea2b963f964ad93ffbdbd33412a93ca3cb66fbb0aac729c8f9"
+  },
+  "nodeGroups": [],
+  "id": "cV0DBT1vx1yhxL86",
+  "tags": []
+}
