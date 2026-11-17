@@ -6,7 +6,7 @@ Creators get hundreds of comments, but the useful ones (requests, questions, kno
 
 > Built with Claude as a coding assistant. The labeling rules, hand labels, evaluation decisions and findings are my own.
 
-> Case study: *"How to Teach Yourself Business & Entrepreneurship"* by Analyzing Finance with Nick (176 comments incl. replies).
+> Case study: *"How to Teach Yourself Business & Entrepreneurship"* by Analyzing Finance with Nick (176 comments incl. replies), plus an out-of-sample test on a second creator (see [Evaluation](#out-of-sample-test-a-second-video)).
 
 ---
 
@@ -80,6 +80,28 @@ With n = 30, one comment moves the score by 3.3 points, so treat these as a case
 
 Splitting disagreements into *AI error / gap in the categories / inconsistency in the gold labels* showed that the gold labels, not the model, caused 2 of the 3 misses.
 
+### Out-of-sample test: a second video
+
+A prompt tuned on one video can look better than it is. So I ran the **same pipeline, rules and prompt** on a different creator and topic: *"Investing Explained Like You're 5"* by Mia McGrath (UK personal finance). I picked it before seeing any results. The only change to the prompt was the video title and creator name in the first sentence.
+
+- 57 rows scraped ($0.11), then 23 replies removed (15 of them the creator's), leaving **34** comments.
+- I hand-labeled **all 34** before running the AI.
+
+| | Agreement | 95% interval (Wilson) |
+|---|---|---|
+| Video 1 (business, n = 30) | 27 / 30 (90%) | ~74% – 97% |
+| **Video 2 (investing, n = 34)** | **27 / 34 (79%)** | ~63% – 90% |
+
+Score on video 2 is after fixing one mis-click in my own labels (a plain compliment I had marked `question`). Raw score: 26 / 34.
+
+| Disagreement | Count | Type |
+|---|---|---|
+| Same book promoted by 4 accounts (2 with word-for-word identical text); AI caught only 1 | 3 | **AI error** |
+| Commenter openly promotes his own investing channel | 1 | **AI error** (its own reason says "promotes own videos", yet it chose `opinion`) |
+| "You should write a book" / asking for similar creators / long story ending in a knowledge gap | 3 | **Gap in the categories**: asks the creator for something other than a video |
+
+**Takeaway:** the drop is almost entirely spam. Request and question detection held up: the top request (*ethical investing*, 54 likes) and all 5 real questions were caught. Full comparison: [`data/video2/labels_vs_ai.csv`](data/video2/labels_vs_ai.csv).
+
 ---
 
 ## Findings
@@ -88,6 +110,8 @@ Splitting disagreements into *AI error / gap in the categories / inconsistency i
 Two unrelated accounts posted personal-sounding stories that both promote the same obscure book. **The AI labeled both as `opinion`**, even though the prompt has an explicit rule for this. It caught all 3 obvious service offers (thumbnail designer, video editor, collab request).
 
 **Why:** the model sees one comment at a time, and in isolation each story looks genuine. The pattern only shows up **across comments**. Catching coordinated campaigns needs a dataset-level check (e.g. the same product named by several accounts), not better per-comment prompting.
+
+**Confirmed on the second video:** a different book, pushed by 4 accounts, two of them posting identical text. Across both videos the AI caught **1 of 6** coordinated promo comments. That is a pattern, not a one-off, and the fix is a rule (flag text or titles repeated across 3+ authors), not a better prompt.
 
 ### 2. Rhetorical questions get labeled as questions
 2 of the 17 `request`/`question` labels were sarcasm or insinuation phrased as a question. The question mark wins.
@@ -114,6 +138,8 @@ Two unrelated accounts posted personal-sounding stories that both promote the sa
 
 One viewer asked *where* the creator's networking video was. It already exists, so that's a discoverability fix (link it in the description), not a content gap.
 
+**Video 2:** the clearest theme was *"which platform or account should I use in my country?"* (Malaysia, Canada, UK platforms, Trading 212 vs Vanguard, Revolut): 5–6 comments, plus the top request for an ethical investing video.
+
 ---
 
 ## Cost
@@ -129,7 +155,7 @@ One viewer asked *where* the creator's networking video was. It already exists, 
 
 ## Limitations
 
-- One video, one channel; 30 hand-labeled comments.
+- Two videos, two channels; 64 hand-labeled comments in total. Still a case study, not a benchmark.
 - Replies excluded, although some contain real questions (e.g. *"Any tips on how to learn marketing?"*).
 - `publishedTimeText` is relative text ("3 months ago"), not a date.
 - 1 of the scraper's 35 requests failed, so a few comments may be missing.
@@ -157,7 +183,10 @@ One viewer asked *where* the creator's networking video was. It already exists, 
 ├── data/
 │   ├── raw_comments.csv   # 142 rows as scraped (before cleaning)
 │   ├── ai_results.csv     # 90 AI-labeled comments
-│   └── my_labels.csv      # 30 hand labels + notes
+│   ├── my_labels.csv      # 30 hand labels + notes
+│   └── video2/
+│       ├── raw_comments.csv   # 57 rows as scraped (out-of-sample video)
+│       └── labels_vs_ai.csv   # 34 hand labels vs AI labels
 └── docs/
     └── pipeline.png   # n8n canvas screenshot
 ```
